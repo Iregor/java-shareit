@@ -16,6 +16,6 @@ public class UniqueUserValidator implements ConstraintValidator<UniqueUser, User
     public boolean isValid(User user, ConstraintValidatorContext constraintValidatorContext) {
         Optional<User> userOpt = userRepository.findUserByEmail(user.getEmail());
         //Another user with such email not found, or current user was found (with user.id)
-        return userOpt.isEmpty() || userOpt.get().getId() == user.getId();
+        return userOpt.isEmpty() || userOpt.get().getId().equals(user.getId());
     }
 }

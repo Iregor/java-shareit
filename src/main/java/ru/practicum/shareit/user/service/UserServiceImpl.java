@@ -90,7 +90,7 @@ public class UserServiceImpl implements UserService {
 
     private void assertUniqueEmail(User user) {
         Optional<User> userOpt = repository.findUserByEmail(user.getEmail());
-        if (userOpt.isPresent() && userOpt.get().getId() != user.getId()) {
+        if (userOpt.isPresent() && !userOpt.get().getId().equals(user.getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT);
         }
     }
