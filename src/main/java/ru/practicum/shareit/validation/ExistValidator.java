@@ -26,18 +26,18 @@ public class ExistValidator implements ConstraintValidator<Exist, Object> {
         switch (value) {
             case "user":
                 if (o instanceof User) {
-                    id = ((User)o).getId();
+                    id = ((User) o).getId();
                 } else if (o instanceof Long) {
-                    id = (Long)o;
+                    id = (Long) o;
                 } else {
                     return false;
                 }
                 return userRepository.assertUserExists(id);
             case "item":
                 if (o instanceof Item) {
-                    id = ((Item)o).getId();
+                    id = ((Item) o).getId();
                 } else if (o instanceof Long) {
-                    id = (Long)o;
+                    id = (Long) o;
                 } else {
                     return false;
                 }
