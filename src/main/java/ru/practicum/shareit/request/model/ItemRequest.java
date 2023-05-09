@@ -1,7 +1,8 @@
-package ru.practicum.shareit.request;
+package ru.practicum.shareit.request.model;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import ru.practicum.shareit.user.model.User;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -20,7 +21,7 @@ public class ItemRequest {
     String itemDescription;
 
     @NotNull
-    Long requestorId;   //User.id
+    User requestor;   //User.id
 
     LocalDateTime created;
 }

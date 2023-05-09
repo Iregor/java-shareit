@@ -1,18 +1,20 @@
 package ru.practicum.shareit.feedback.model;
 
+import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.user.model.User;
+
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Positive;
 
 public class FeedBack {
 
     Long id;
 
-    @Positive
-    Long itemId;
+    @NotNull
+    Item item;
 
-    @Positive
-    Long userId;
+    @NotNull
+    User user;
 
     @NotBlank
     private String content;

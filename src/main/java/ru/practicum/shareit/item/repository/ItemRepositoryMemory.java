@@ -32,7 +32,7 @@ public class ItemRepositoryMemory implements ItemRepository {
     @Override
     public List<Item> findOwnerItems(Long userId) {
         return items.values().stream()
-                .filter(item -> item.getOwnerId().equals(userId))
+                .filter(item -> item.getOwner().getId().equals(userId))
                 .sorted(Comparator.comparingLong(Item::getId))
                 .collect(Collectors.toList());
     }
