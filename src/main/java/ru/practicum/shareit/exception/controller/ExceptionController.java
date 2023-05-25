@@ -53,7 +53,7 @@ public class ExceptionController {
     }
 
     @ExceptionHandler(NoResolvedBookingException.class)
-    ResponseEntity<NoResolvedBookingResponse> NoResolvedBookingExceptionHandler(NoResolvedBookingException exc) {
+    ResponseEntity<NoResolvedBookingResponse> noResolvedBookingExceptionHandler(NoResolvedBookingException exc) {
         log.warn(String.format("%s : %s : %s : %s : %s", exc.getTime(), exc.getMessage(), exc.getItemId(), exc.getUserId(), exc.getBackInfo()));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new NoResolvedBookingResponse(exc.getTime(), exc.getMessage(), exc.getItemId(), exc.getUserId()));
     }
