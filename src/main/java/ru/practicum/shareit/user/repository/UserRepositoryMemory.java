@@ -10,7 +10,7 @@ import java.util.*;
 @Validated
 public class UserRepositoryMemory implements UserRepository {
 
-    private Map<Long, User> users = new HashMap<>();
+    private final Map<Long, User> users = new HashMap<>();
     private Long currentId = 0L;
 
     @Override

@@ -3,14 +3,14 @@ package ru.practicum.shareit.exception.response;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.practicum.shareit.item.dto.ItemDto;
+
+import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class IllegalAccessToItemResponse {
+public class EntityNotFoundResponse {
+    private LocalDateTime time;
     private String message;
-    private ItemDto itemDto;
-    private Long headerUserId;
-    private Long pathVarItemId;
+    private Long entityId;
 }

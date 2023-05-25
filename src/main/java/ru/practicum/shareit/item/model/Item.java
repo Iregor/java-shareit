@@ -4,21 +4,21 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.model.User;
 
+import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
-/**
- * TODO Sprint add-controllers.
- */
+@Entity
+@Table(name = "items")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Item {
-
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotBlank
@@ -30,8 +30,9 @@ public class Item {
     @NotNull
     private Boolean available;
 
+    @ManyToOne(fetch = FetchType.LAZY)
     @NotNull
     private User owner;
 
-    private ItemRequest itemRequest;
+//    private ItemRequest itemRequest;
 }

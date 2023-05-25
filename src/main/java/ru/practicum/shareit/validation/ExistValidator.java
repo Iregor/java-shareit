@@ -2,9 +2,9 @@ package ru.practicum.shareit.validation;
 
 import lombok.RequiredArgsConstructor;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.item.repository.ItemRepositoryJPA;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.repository.UserRepository;
+import ru.practicum.shareit.user.repository.UserRepositoryJPA;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
@@ -12,8 +12,8 @@ import javax.validation.ConstraintValidatorContext;
 @RequiredArgsConstructor
 public class ExistValidator implements ConstraintValidator<Exist, Object> {
     private String value;
-    private final UserRepository userRepository;
-    private final ItemRepository itemRepository;
+    private final UserRepositoryJPA userRepository;
+    private final ItemRepositoryJPA itemRepository;
 
     @Override
     public void initialize(Exist constraintAnnotation) {
@@ -32,7 +32,7 @@ public class ExistValidator implements ConstraintValidator<Exist, Object> {
                 } else {
                     return false;
                 }
-                return userRepository.assertUserExists(id);
+                return userRepository.existsById(id);
             case "item":
                 if (o instanceof Item) {
                     id = ((Item) o).getId();
@@ -41,7 +41,7 @@ public class ExistValidator implements ConstraintValidator<Exist, Object> {
                 } else {
                     return false;
                 }
-                return itemRepository.assertItemExists(id);
+                return itemRepository.existsById(id);
         }
         return false;
     }

@@ -1,11 +1,7 @@
 package ru.practicum.shareit.exception.controller;
 
 import org.springframework.http.HttpStatus;
-import ru.practicum.shareit.exception.exceptions.IllegalAccessToItemException;
-import ru.practicum.shareit.exception.exceptions.ItemIdNotConsistentException;
 import ru.practicum.shareit.exception.exceptions.Violation;
-import ru.practicum.shareit.exception.response.IllegalAccessToItemResponse;
-import ru.practicum.shareit.exception.response.ItemIdNotConsistentResponse;
 import ru.practicum.shareit.exception.response.ValidationErrorResponse;
 
 import javax.validation.ConstraintViolation;
@@ -17,12 +13,6 @@ import java.util.stream.Collectors;
 
 public class ExceptionMapper {
     public static Object getResponseBody(Exception exc) {
-        if (exc instanceof IllegalAccessToItemException) {
-            return mapToIllegalAccessToItemResponse(exc);
-        }
-        if (exc instanceof ItemIdNotConsistentException) {
-            return mapToItemIdNotConsistentResponse(exc);
-        }
         if (exc instanceof ConstraintViolationException) {
             return mapToConstraintViolationResponse(exc);
         }
@@ -30,12 +20,6 @@ public class ExceptionMapper {
     }
 
     public static String getLog(Exception exc) {
-        if (exc instanceof IllegalAccessToItemException) {
-            return mapToIllegalAccessToItemLog(exc);
-        }
-        if (exc instanceof ItemIdNotConsistentException) {
-            return mapToItemIdNotConsistentLog(exc);
-        }
         if (exc instanceof ConstraintViolationException) {
             return mapToConstraintViolationLog(exc);
         }
@@ -43,36 +27,10 @@ public class ExceptionMapper {
     }
 
     public static HttpStatus getHttpStatus(Exception exc) {
-        if (exc instanceof IllegalAccessToItemException) {
-            return HttpStatus.FORBIDDEN;
-        }
-        if (exc instanceof ItemIdNotConsistentException) {
-            return HttpStatus.BAD_REQUEST;
-        }
         if (exc instanceof ConstraintViolationException) {
             return mapToConstraintViolationStatus(exc);
         }
         return null;
-    }
-
-    private static IllegalAccessToItemResponse mapToIllegalAccessToItemResponse(Exception exc) {
-        IllegalAccessToItemException typeExc = (IllegalAccessToItemException) exc;
-        return new IllegalAccessToItemResponse(typeExc.getMessage(), typeExc.getItemDto(), typeExc.getUserId(), typeExc.getItemId());
-    }
-
-    private static String mapToIllegalAccessToItemLog(Exception exc) {
-        IllegalAccessToItemException typeExc = (IllegalAccessToItemException) exc;
-        return String.format("%s / %s / ItemDto: %s / headerUserId: %d / pathVarItemId: %d", typeExc.getBackInfo(), typeExc.getMessage(), typeExc.getItemDto(), typeExc.getUserId(), typeExc.getItemId());
-    }
-
-    private static ItemIdNotConsistentResponse mapToItemIdNotConsistentResponse(Exception exc) {
-        ItemIdNotConsistentException typeExc = (ItemIdNotConsistentException) exc;
-        return new ItemIdNotConsistentResponse(exc.getMessage(), typeExc.getItemDto(), typeExc.getUserId(), typeExc.getItemId());
-    }
-
-    private static String mapToItemIdNotConsistentLog(Exception exc) {
-        ItemIdNotConsistentException typeExc = (ItemIdNotConsistentException) exc;
-        return String.format("%s / %s / ItemDto: %s / headerUserId: %d / pathVarItemId: %d", typeExc.getBackInfo(), typeExc.getMessage(), typeExc.getItemDto(), typeExc.getUserId(), typeExc.getItemId());
     }
 
     private static ValidationErrorResponse mapToConstraintViolationResponse(Exception exc) {
@@ -97,8 +55,7 @@ public class ExceptionMapper {
 
         StringBuilder sb = new StringBuilder(String.format("invalidEntity: %s. ", invalidEntity));
         sb.append("Violations: ");
-        for (Violation violation :
-                violations) {
+        for (Violation violation : violations) {
             sb.append(String.format("fieldName: %s / message: %s", violation.getFieldName(), violation.getMessage()));
         }
         return sb.toString();

@@ -6,10 +6,10 @@ import ru.practicum.shareit.item.dto.ItemDto;
 @Getter
 public class ItemIdNotConsistentException extends RuntimeException {
 
-    private String backInfo;
-    private ItemDto itemDto;
-    private Long userId;
-    private Long itemId;
+    private final String backInfo;
+    private final ItemDto itemDto;
+    private final Long userId;
+    private final Long itemId;
 
     public ItemIdNotConsistentException(String backInfo, String message, ItemDto itemDto, Long userId, Long itemId) {
         super(message);
