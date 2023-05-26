@@ -34,14 +34,17 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemDto createItem(ItemDto itemDto, Long userId) {
-        return ItemMapper.toDto(itemRepository.save(itemMapper.toItem(itemDto, userId)));
+        Item item = itemMapper.toItem(itemDto);
+        item.setOwner(userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found.", userId, String.valueOf(Thread.currentThread().getStackTrace()[1]))));
+        return ItemMapper.toDto(itemRepository.save(item));
     }
 
     @Override
     public ItemDto updateItem(ItemDto itemDto, Long userId, Long itemId) throws IllegalAccessException {
         validateUserAccess(userId, itemId);
         validateItemIdConsistency(itemDto, userId, itemId);
-        Item itemToSave = itemMapper.toItem(itemDto, userId);
+        Item itemToSave = itemMapper.toItem(itemDto);
+        itemToSave.setOwner(userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found.", userId, String.valueOf(Thread.currentThread().getStackTrace()[1]))));
         buildItemEntity(itemToSave, itemId);
         itemToSave.setId(itemId);
         Item updatedItem = itemRepository.save(itemToSave);

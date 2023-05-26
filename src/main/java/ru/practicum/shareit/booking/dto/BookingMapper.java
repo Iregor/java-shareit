@@ -4,31 +4,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.initializer.JpaProxyInitializer;
-import ru.practicum.shareit.item.repository.ItemRepositoryJPA;
-import ru.practicum.shareit.user.repository.UserRepositoryJPA;
 
 @Component
 @RequiredArgsConstructor
 public class BookingMapper {
-    private final ItemRepositoryJPA itemRepository;
-    private final UserRepositoryJPA userRepository;
 
     public Booking toBooking(BookingDto dto) {
         return Booking.builder()
                 .id(dto.getId())
-                .item(itemRepository.findById(dto.getItemId()).get())
-                .booker(userRepository.findById(dto.getBookerId()).get())
-                .start(dto.getStart())
-                .end(dto.getEnd())
-                .status(dto.getStatus())
-                .build();
-    }
-
-    public Booking toBooking(BookingDto dto, Long bookerId) {
-        return Booking.builder()
-                .id(dto.getId())
-                .item(itemRepository.findById(dto.getItemId()).get())
-                .booker(userRepository.findById(bookerId).get())
                 .start(dto.getStart())
                 .end(dto.getEnd())
                 .status(dto.getStatus())

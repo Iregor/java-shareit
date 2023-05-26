@@ -11,10 +11,10 @@ import ru.practicum.shareit.exception.exceptions.BookingStatusAlreadyApprovedExc
 import ru.practicum.shareit.exception.exceptions.EntityNotFoundException;
 import ru.practicum.shareit.exception.exceptions.IllegalAccessToEntityException;
 import ru.practicum.shareit.exception.exceptions.UnknownStateException;
+import ru.practicum.shareit.item.repository.ItemRepositoryJPA;
 import ru.practicum.shareit.user.repository.UserRepositoryJPA;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -23,11 +23,14 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
 
     private final UserRepositoryJPA userRepository;
+    private final ItemRepositoryJPA itemRepository;
     private final BookingMapper bookingMapper;
 
     @Override
     public Booking createBooking(BookingDto bookingDto, Long userId) {
-        Booking booking = bookingMapper.toBooking(bookingDto, userId);
+        Booking booking = bookingMapper.toBooking(bookingDto);
+        booking.setItem(itemRepository.findById(bookingDto.getItemId()).orElseThrow(() -> new EntityNotFoundException("User not found.", userId, String.valueOf(Thread.currentThread().getStackTrace()[1]))));
+        booking.setBooker(userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found.", userId, String.valueOf(Thread.currentThread().getStackTrace()[1]))));
         validateBookerNotOwner(booking, userId);
         booking.setStatus(BookingStatus.WAITING);
         return BookingMapper.initializeBooking(bookingRepository.save(booking));
@@ -56,16 +59,43 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<Booking> findAllBookingsByOwnerIdAndState(Long ownerId, String state) {
-        validateUser(ownerId);
-        return bookingRepository.findAllBookingsByOwnerIdAndState(ownerId, getStatusCondition(state)).stream().map(BookingMapper::initializeBooking).collect(Collectors.toList());
-
+    public List<Booking> findAllBookingsByOwnerIdAndState(Long bookerId, String state) {
+        validateUser(bookerId);
+        switch (state) {
+            case "CURRENT":
+                return bookingRepository.findAllCurrentBookingsByOwnerIdAndState(bookerId);
+            case "PAST":
+                return bookingRepository.findAllPastBookingsByOwnerIdAndState(bookerId);
+            case "FUTURE":
+                return bookingRepository.findAllFutureBookingsByOwnerIdAndState(bookerId);
+            case "WAITING":
+                return bookingRepository.findAllWaitingBookingsByOwnerIdAndState(bookerId);
+            case "REJECTED":
+                return bookingRepository.findAllRejectedBookingsByOwnerIdAndState(bookerId);
+            case "ALL":
+                return bookingRepository.findAllBookingsByOwnerIdAndState(bookerId);
+        }
+        throw new UnknownStateException(String.format("Unknown state: %s", state), state, String.valueOf(Thread.currentThread().getStackTrace()[1]));
     }
 
     @Override
     public List<Booking> findAllBookingsForOwnerItemsWithState(Long ownerId, String state) {
         validateUser(ownerId);
-        return bookingRepository.findAllBookingsForOwnerItemsWithState(ownerId, getStatusCondition(state));
+        switch (state) {
+            case "CURRENT":
+                return bookingRepository.findAllCurrentBookingsForOwnerItems(ownerId);
+            case "PAST":
+                return bookingRepository.findAllPastBookingsForOwnerItems(ownerId);
+            case "FUTURE":
+                return bookingRepository.findAllFutureBookingsForOwnerItems(ownerId);
+            case "WAITING":
+                return bookingRepository.findAllWaitingBookingsForOwnerItems(ownerId);
+            case "REJECTED":
+                return bookingRepository.findAllRejectedBookingsForOwnerItems(ownerId);
+            case "ALL":
+                return bookingRepository.findAllBookingsForOwnerItems(ownerId);
+        }
+        throw new UnknownStateException(String.format("Unknown state: %s", state), state, String.valueOf(Thread.currentThread().getStackTrace()[1]));
     }
 
 
@@ -85,32 +115,6 @@ public class BookingServiceImpl implements BookingService {
         if (!userRepository.existsById(userId)) {
             throw new EntityNotFoundException("User not found.", userId, String.valueOf(Thread.currentThread().getStackTrace()[1]));
         }
-    }
-
-    private String getStatusCondition(String state) {
-        String statusCondition = "";
-        switch (state) {
-            case "CURRENT":
-                statusCondition = " AND current_timestamp BETWEEN b.start AND b.end";
-                break;
-            case "PAST":
-                statusCondition = " AND current_timestamp > b.end";
-                break;
-            case "FUTURE":
-                statusCondition = " AND current_timestamp < b.start";
-                break;
-            case "WAITING":
-                statusCondition = " AND b.status = 'WAITING'";
-                break;
-            case "REJECTED":
-                statusCondition = " AND b.status = 'REJECTED'";
-                break;
-            case "ALL":
-                break;
-            default:
-                throw new UnknownStateException(String.format("Unknown state: %s", state), state, String.valueOf(Thread.currentThread().getStackTrace()[1]));
-        }
-        return statusCondition;
     }
 
     private void validateNotApprovedBooking(Booking booking) {
