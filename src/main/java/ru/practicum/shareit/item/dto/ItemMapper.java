@@ -1,11 +1,10 @@
 package ru.practicum.shareit.item.dto;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import ru.practicum.shareit.item.model.Item;
 
-@Component
-@RequiredArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ItemMapper {
     public static ItemDto toDto(Item item) {
         return ItemDto.builder()
@@ -20,7 +19,7 @@ public class ItemMapper {
         return new ItemBookingsIdDto(item.getId(), item.getName(), item.getDescription(), item.getAvailable());
     }
 
-    public Item toItem(ItemDto dto) {
+    public static Item toItem(ItemDto dto) {
         return Item.builder()
                 .name(dto.getName())
                 .description(dto.getDescription())

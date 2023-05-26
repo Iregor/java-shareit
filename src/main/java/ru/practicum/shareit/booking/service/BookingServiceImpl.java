@@ -15,25 +15,80 @@ import ru.practicum.shareit.item.repository.ItemRepositoryJPA;
 import ru.practicum.shareit.user.repository.UserRepositoryJPA;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository bookingRepository;
-
     private final UserRepositoryJPA userRepository;
     private final ItemRepositoryJPA itemRepository;
-    private final BookingMapper bookingMapper;
 
     @Override
-    public Booking createBooking(BookingDto bookingDto, Long userId) {
-        Booking booking = bookingMapper.toBooking(bookingDto);
-        booking.setItem(itemRepository.findById(bookingDto.getItemId()).orElseThrow(() -> new EntityNotFoundException("User not found.", userId, String.valueOf(Thread.currentThread().getStackTrace()[1]))));
+    public BookingDto createBooking(BookingDto bookingDto, Long userId) {
+        Booking booking = BookingMapper.toBooking(bookingDto);
+        booking.setItem(itemRepository.findById(bookingDto.getItemId()).orElseThrow(() -> new EntityNotFoundException("Item not found.", userId, String.valueOf(Thread.currentThread().getStackTrace()[1]))));
         booking.setBooker(userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found.", userId, String.valueOf(Thread.currentThread().getStackTrace()[1]))));
         validateBookerNotOwner(booking, userId);
         booking.setStatus(BookingStatus.WAITING);
-        return BookingMapper.initializeBooking(bookingRepository.save(booking));
+        return toBookingDto(bookingRepository.save(booking));
+    }
+
+    @Override
+    public BookingDto updateBooking(Long bookingId, boolean approved, Long ownerId) {
+        Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -> new EntityNotFoundException("Booking not found.", bookingId, String.valueOf(Thread.currentThread().getStackTrace()[1])));
+        validateBookerOwner(booking, ownerId);
+        validateNotApprovedBooking(booking);
+        booking.setStatus(approved ? BookingStatus.APPROVED : BookingStatus.REJECTED);
+        return toBookingDto(bookingRepository.save(booking));
+    }
+
+    @Override
+    public BookingDto findBookingById(Long bookingId, Long userId) {
+        Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -> new EntityNotFoundException("Booking not found.", bookingId, String.valueOf(Thread.currentThread().getStackTrace()[1])));
+        validateBookingAccess(booking, userId);
+        return toBookingDto(BookingMapper.initializeBooking(booking));
+    }
+
+    @Override
+    public List<BookingDto> findAllBookingsByOwnerIdAndState(Long bookerId, String state) {
+        validateUser(bookerId);
+        switch (state) {
+            case "CURRENT":
+                return bookingRepository.findAllCurrentBookingsByOwnerId(bookerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+            case "PAST":
+                return bookingRepository.findAllPastBookingsByOwnerId(bookerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+            case "FUTURE":
+                return bookingRepository.findAllFutureBookingsByOwnerId(bookerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+            case "WAITING":
+                return bookingRepository.findAllWaitingBookingsByOwnerId(bookerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+            case "REJECTED":
+                return bookingRepository.findAllRejectedBookingsByOwnerId(bookerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+            case "ALL":
+                return bookingRepository.findAllBookingsByOwnerIdAndState(bookerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+        }
+        throw new UnknownStateException(String.format("Unknown state: %s", state), state, String.valueOf(Thread.currentThread().getStackTrace()[1]));
+    }
+
+    @Override
+    public List<BookingDto> findAllBookingsForOwnerItemsWithState(Long ownerId, String state) {
+        validateUser(ownerId);
+        switch (state) {
+            case "CURRENT":
+                return bookingRepository.findAllCurrentBookingsForOwnerItems(ownerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+            case "PAST":
+                return bookingRepository.findAllPastBookingsForOwnerItems(ownerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+            case "FUTURE":
+                return bookingRepository.findAllFutureBookingsForOwnerItems(ownerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+            case "WAITING":
+                return bookingRepository.findAllWaitingBookingsForOwnerItems(ownerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+            case "REJECTED":
+                return bookingRepository.findAllRejectedBookingsForOwnerItems(ownerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+            case "ALL":
+                return bookingRepository.findAllBookingsForOwnerItems(ownerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+        }
+        throw new UnknownStateException(String.format("Unknown state: %s", state), state, String.valueOf(Thread.currentThread().getStackTrace()[1]));
     }
 
     private void validateBookerNotOwner(Booking booking, Long bookerId) {
@@ -41,63 +96,6 @@ public class BookingServiceImpl implements BookingService {
             throw new IllegalAccessToEntityException("Fail to grant access to book item by owner.", booking.getItem().getId(), bookerId, String.valueOf(Thread.currentThread().getStackTrace()[1]));
         }
     }
-
-    @Override
-    public Booking updateBooking(Long bookingId, boolean approved, Long ownerId) {
-        Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -> new EntityNotFoundException("Booking not found.", bookingId, String.valueOf(Thread.currentThread().getStackTrace()[1])));
-        validateBookerOwner(booking, ownerId);
-        validateNotApprovedBooking(booking);
-        booking.setStatus(approved ? BookingStatus.APPROVED : BookingStatus.REJECTED);
-        return BookingMapper.initializeBooking(bookingRepository.save(booking));
-    }
-
-    @Override
-    public Booking findBookingById(Long bookingId, Long userId) {
-        Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -> new EntityNotFoundException("Booking not found.", bookingId, String.valueOf(Thread.currentThread().getStackTrace()[1])));
-        validateBookingAccess(booking, userId);
-        return BookingMapper.initializeBooking(booking);
-    }
-
-    @Override
-    public List<Booking> findAllBookingsByOwnerIdAndState(Long bookerId, String state) {
-        validateUser(bookerId);
-        switch (state) {
-            case "CURRENT":
-                return bookingRepository.findAllCurrentBookingsByOwnerIdAndState(bookerId);
-            case "PAST":
-                return bookingRepository.findAllPastBookingsByOwnerIdAndState(bookerId);
-            case "FUTURE":
-                return bookingRepository.findAllFutureBookingsByOwnerIdAndState(bookerId);
-            case "WAITING":
-                return bookingRepository.findAllWaitingBookingsByOwnerIdAndState(bookerId);
-            case "REJECTED":
-                return bookingRepository.findAllRejectedBookingsByOwnerIdAndState(bookerId);
-            case "ALL":
-                return bookingRepository.findAllBookingsByOwnerIdAndState(bookerId);
-        }
-        throw new UnknownStateException(String.format("Unknown state: %s", state), state, String.valueOf(Thread.currentThread().getStackTrace()[1]));
-    }
-
-    @Override
-    public List<Booking> findAllBookingsForOwnerItemsWithState(Long ownerId, String state) {
-        validateUser(ownerId);
-        switch (state) {
-            case "CURRENT":
-                return bookingRepository.findAllCurrentBookingsForOwnerItems(ownerId);
-            case "PAST":
-                return bookingRepository.findAllPastBookingsForOwnerItems(ownerId);
-            case "FUTURE":
-                return bookingRepository.findAllFutureBookingsForOwnerItems(ownerId);
-            case "WAITING":
-                return bookingRepository.findAllWaitingBookingsForOwnerItems(ownerId);
-            case "REJECTED":
-                return bookingRepository.findAllRejectedBookingsForOwnerItems(ownerId);
-            case "ALL":
-                return bookingRepository.findAllBookingsForOwnerItems(ownerId);
-        }
-        throw new UnknownStateException(String.format("Unknown state: %s", state), state, String.valueOf(Thread.currentThread().getStackTrace()[1]));
-    }
-
 
     private void validateBookerOwner(Booking booking, Long ownerId) {
         if (!booking.getItem().getOwner().getId().equals(ownerId)) {
@@ -121,5 +119,12 @@ public class BookingServiceImpl implements BookingService {
         if (booking.getStatus().equals(BookingStatus.APPROVED)) {
             throw new BookingStatusAlreadyApprovedException("Booking status has been already approved.", booking.getId(), String.valueOf(Thread.currentThread().getStackTrace()[1]));
         }
+    }
+
+    private BookingDto toBookingDto(Booking booking) {
+        BookingDto dto = BookingMapper.toDto(booking);
+        dto.setBooker(new BookingDto.Booker(booking.getBooker().getId(), booking.getBooker().getName()));
+        dto.setItem(new BookingDto.Item(booking.getItem().getId(), booking.getItem().getName()));
+        return dto;
     }
 }

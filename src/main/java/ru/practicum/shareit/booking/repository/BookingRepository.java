@@ -22,19 +22,19 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findAllBookingsByOwnerIdAndState(Long bookerId);
 
     @Query("SELECT b FROM Booking b JOIN FETCH b.booker JOIN FETCH b.item it JOIN FETCH it.owner WHERE b.booker.id = :bookerId AND current_timestamp BETWEEN b.start AND b.end ORDER BY b.start DESC")
-    List<Booking> findAllCurrentBookingsByOwnerIdAndState(Long bookerId);
+    List<Booking> findAllCurrentBookingsByOwnerId(Long bookerId);
 
     @Query("SELECT b FROM Booking b JOIN FETCH b.booker JOIN FETCH b.item it JOIN FETCH it.owner WHERE b.booker.id = :bookerId AND current_timestamp > b.end ORDER BY b.start DESC")
-    List<Booking> findAllPastBookingsByOwnerIdAndState(Long bookerId);
+    List<Booking> findAllPastBookingsByOwnerId(Long bookerId);
 
     @Query("SELECT b FROM Booking b JOIN FETCH b.booker JOIN FETCH b.item it JOIN FETCH it.owner WHERE b.booker.id = :bookerId AND current_timestamp < b.start ORDER BY b.start DESC")
-    List<Booking> findAllFutureBookingsByOwnerIdAndState(Long bookerId);
+    List<Booking> findAllFutureBookingsByOwnerId(Long bookerId);
 
     @Query("SELECT b FROM Booking b JOIN FETCH b.booker JOIN FETCH b.item it JOIN FETCH it.owner WHERE b.booker.id = :bookerId AND b.status = 'WAITING' ORDER BY b.start DESC")
-    List<Booking> findAllWaitingBookingsByOwnerIdAndState(Long bookerId);
+    List<Booking> findAllWaitingBookingsByOwnerId(Long bookerId);
 
     @Query("SELECT b FROM Booking b JOIN FETCH b.booker JOIN FETCH b.item it JOIN FETCH it.owner WHERE b.booker.id = :bookerId AND b.status = 'REJECTED' ORDER BY b.start DESC")
-    List<Booking> findAllRejectedBookingsByOwnerIdAndState(Long bookerId);
+    List<Booking> findAllRejectedBookingsByOwnerId(Long bookerId);
 
     @Query("SELECT b FROM Booking b JOIN FETCH b.booker JOIN FETCH b.item it JOIN FETCH it.owner own WHERE own.id = :ownerId ORDER BY b.start DESC")
     List<Booking> findAllBookingsForOwnerItems(Long ownerId);

@@ -1,12 +1,8 @@
 package ru.practicum.shareit.booking.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.validation.BookingDateConsistency;
-import ru.practicum.shareit.validation.Exist;
 import ru.practicum.shareit.validation.ItemAvailable;
 
 import javax.validation.constraints.Future;
@@ -23,11 +19,12 @@ public class BookingDto {
     private Long id;
 
     @NotNull
-    @Exist("item")
     @ItemAvailable
     private Long itemId;
 
-    private Long bookerId;
+    private Item item;
+
+    private Booker booker;
 
     @NotNull
     @Future
@@ -38,4 +35,17 @@ public class BookingDto {
     private LocalDateTime end;
 
     private BookingStatus status;
+
+    @Data
+    @RequiredArgsConstructor
+    public static class Booker {
+        private final long id;
+        private final String name;
+    }
+
+    @Data
+    public static class Item {
+        private final long id;
+        private final String name;
+    }
 }

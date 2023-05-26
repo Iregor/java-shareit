@@ -30,11 +30,10 @@ public class ItemServiceImpl implements ItemService {
     private final UserRepositoryJPA userRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
-    private final ItemMapper itemMapper;
 
     @Override
     public ItemDto createItem(ItemDto itemDto, Long userId) {
-        Item item = itemMapper.toItem(itemDto);
+        Item item = ItemMapper.toItem(itemDto);
         item.setOwner(userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found.", userId, String.valueOf(Thread.currentThread().getStackTrace()[1]))));
         return ItemMapper.toDto(itemRepository.save(item));
     }
@@ -43,7 +42,7 @@ public class ItemServiceImpl implements ItemService {
     public ItemDto updateItem(ItemDto itemDto, Long userId, Long itemId) throws IllegalAccessException {
         validateUserAccess(userId, itemId);
         validateItemIdConsistency(itemDto, userId, itemId);
-        Item itemToSave = itemMapper.toItem(itemDto);
+        Item itemToSave = ItemMapper.toItem(itemDto);
         itemToSave.setOwner(userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found.", userId, String.valueOf(Thread.currentThread().getStackTrace()[1]))));
         buildItemEntity(itemToSave, itemId);
         itemToSave.setId(itemId);

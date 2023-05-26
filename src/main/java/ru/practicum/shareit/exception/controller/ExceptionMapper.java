@@ -1,5 +1,7 @@
 package ru.practicum.shareit.exception.controller;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.springframework.http.HttpStatus;
 import ru.practicum.shareit.exception.exceptions.Violation;
 import ru.practicum.shareit.exception.response.ValidationErrorResponse;
@@ -11,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ExceptionMapper {
     public static Object getResponseBody(Exception exc) {
         if (exc instanceof ConstraintViolationException) {

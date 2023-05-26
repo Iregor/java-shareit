@@ -1,15 +1,14 @@
 package ru.practicum.shareit.booking.dto;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.initializer.JpaProxyInitializer;
 
-@Component
-@RequiredArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class BookingMapper {
 
-    public Booking toBooking(BookingDto dto) {
+    public static Booking toBooking(BookingDto dto) {
         return Booking.builder()
                 .id(dto.getId())
                 .start(dto.getStart())
@@ -18,12 +17,11 @@ public class BookingMapper {
                 .build();
     }
 
-    public BookingDto toDto(Booking entity) {
+    public static BookingDto toDto(Booking entity) {
         return BookingDto.builder()
                 .id(entity.getId())
-                .bookerId(entity.getId())
-                .itemId(entity.getItem().getId())
-                .bookerId(entity.getBooker().getId())
+//                .itemId(entity.getItem().getId())
+//                .bookerId(entity.getBooker().getId())
                 .start(entity.getStart())
                 .end(entity.getEnd())
                 .status(entity.getStatus())
