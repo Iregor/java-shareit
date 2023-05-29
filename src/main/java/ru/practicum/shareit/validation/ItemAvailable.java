@@ -5,13 +5,11 @@ import javax.validation.Payload;
 import java.lang.annotation.*;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.PARAMETER, ElementType.FIELD})
+@Target({ElementType.METHOD, ElementType.FIELD})
+@Constraint(validatedBy = ItemAvailableValidator.class)
 @Documented
-@Constraint(validatedBy = ExistValidator.class)
-public @interface Exist {
-    String value();
-
-    String message() default "Provided entity does not exist.";
+public @interface ItemAvailable {
+    String message() default "Item not available.";
 
     Class<?>[] groups() default {};
 

@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 @Repository
 public class ItemRepositoryMemory implements ItemRepository {
-    private Map<Long, Item> items = new HashMap<>();
+    private final Map<Long, Item> items = new HashMap<>();
     private long currentId;
 
     @Override
