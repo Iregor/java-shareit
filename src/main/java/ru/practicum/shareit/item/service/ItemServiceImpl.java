@@ -13,8 +13,11 @@ import ru.practicum.shareit.item.dto.*;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.CommentRepository;
-import ru.practicum.shareit.item.repository.ItemRepositoryJPA;
-import ru.practicum.shareit.user.repository.UserRepositoryJPA;
+import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.request.model.Request;
+import ru.practicum.shareit.request.repository.RequestRepository;
+import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
@@ -26,16 +29,22 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ItemServiceImpl implements ItemService {
 
-    private final ItemRepositoryJPA itemRepository;
-    private final UserRepositoryJPA userRepository;
+    private final ItemRepository itemRepository;
+    private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
+    private final RequestRepository requestRepository;
 
     @Override
     public ItemDto createItem(ItemDto itemDto, Long userId) {
-        Item item = ItemMapper.toItem(itemDto);
-        item.setOwner(userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found.", userId, String.valueOf(Thread.currentThread().getStackTrace()[1]))));
-        return ItemMapper.toDto(itemRepository.save(item));
+        User owner = userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found.", userId, String.valueOf(Thread.currentThread().getStackTrace()[1])));
+        Request request;
+        if (itemDto.getRequestId() != null) {
+            request = requestRepository.findById(itemDto.getRequestId()).orElseThrow(() -> new EntityNotFoundException("Request not found.", itemDto.getRequestId(), String.valueOf(Thread.currentThread().getStackTrace()[1])));
+        } else {
+            request = null;
+        }
+        return ItemMapper.toItemDto(itemRepository.save(ItemMapper.toItem(itemDto, owner, request)));
     }
 
     @Override
@@ -45,24 +54,25 @@ public class ItemServiceImpl implements ItemService {
         Item itemToSave = ItemMapper.toItem(itemDto);
         itemToSave.setOwner(userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found.", userId, String.valueOf(Thread.currentThread().getStackTrace()[1]))));
         buildItemEntity(itemToSave, itemId);
-        itemToSave.setId(itemId);
-        Item updatedItem = itemRepository.save(itemToSave);
-        return ItemMapper.toDto(updatedItem);
+        return ItemMapper.toItemDto(itemRepository.save(itemToSave));
     }
 
     @Override
     public ItemDto findItemById(Long itemId, Long userId) {
         Item item = itemRepository.findById(itemId).orElseThrow(() -> new EntityNotFoundException("Item not found.", itemId, String.valueOf(Thread.currentThread().getStackTrace()[1])));
-        ItemBookingsIdDto dto = ItemMapper.toItemBookingsIdDto(item);
+        ItemWithBookingsDto dto = ItemMapper.toItemWithBookingsDto(item);
         dto.setComments(commentRepository.findAllByItemIdOrderById(itemId).stream().map(CommentMapper::toCommentDto).collect(Collectors.toList()));
         return userId.equals(item.getOwner().getId()) ? setBookingBookerIdDto(dto) : dto;
     }
 
     @Override
     public List<ItemDto> findOwnerItems(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new EntityNotFoundException("User not found.", userId, String.valueOf(Thread.currentThread().getStackTrace()[1]));
+        }
         return itemRepository.findAllByOwnerId(userId)
                 .stream()
-                .map(ItemMapper::toItemBookingsIdDto)
+                .map(ItemMapper::toItemWithBookingsDto)
                 .map(this::setBookingBookerIdDto)
                 .map(this::setCommentsToDto)
                 .collect(Collectors.toList());
@@ -73,7 +83,7 @@ public class ItemServiceImpl implements ItemService {
         if (text.isBlank() || text.isEmpty()) {
             return new ArrayList<>();
         }
-        return itemRepository.findAllByDescriptionContainingIgnoreCaseAndAvailable(text, true).stream().map(ItemMapper::toDto).collect(Collectors.toList());
+        return itemRepository.findAllByDescriptionContainingIgnoreCaseAndAvailable(text, true).stream().map(ItemMapper::toItemDto).collect(Collectors.toList());
     }
 
     @Override
@@ -96,7 +106,6 @@ public class ItemServiceImpl implements ItemService {
                 .build();
     }
 
-
     private void validateUserAccess(Long userId, Long itemId) {
         Item existedItem = itemRepository.findById(itemId).orElseThrow(() -> new EntityNotFoundException("User not found.", itemId, String.valueOf(Thread.currentThread().getStackTrace()[1])));
         if (!existedItem.getOwner().getId().equals(userId)) {
@@ -110,13 +119,13 @@ public class ItemServiceImpl implements ItemService {
         }
     }
 
-    private ItemBookingsIdDto setBookingBookerIdDto(ItemBookingsIdDto dto) {
+    private ItemWithBookingsDto setBookingBookerIdDto(ItemWithBookingsDto dto) {
         dto.setLastBooking(BookingMapper.toBookingBookerIdDto(bookingRepository.findFirstByItemIdAndStartBeforeAndStatusOrderByEndDesc(dto.getId(), LocalDateTime.now(), BookingStatus.APPROVED).orElse(null)));
         dto.setNextBooking(BookingMapper.toBookingBookerIdDto(bookingRepository.findFirstByItemIdAndStartAfterAndStatusOrderByStartAsc(dto.getId(), LocalDateTime.now(), BookingStatus.APPROVED).orElse(null)));
         return dto;
     }
 
-    private ItemBookingsIdDto setCommentsToDto(ItemBookingsIdDto dto) {
+    private ItemWithBookingsDto setCommentsToDto(ItemWithBookingsDto dto) {
         dto.setComments(commentRepository.findAllByItemIdOrderById(dto.getId()).stream().map(CommentMapper::toCommentDto).collect(Collectors.toList()));
         return dto;
     }

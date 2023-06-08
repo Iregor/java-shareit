@@ -14,5 +14,4 @@ public class IllegalAccessToEntityResponse {
     private String message;
     private Long entityId;
     private Long userId;
-
 }

@@ -1,7 +1,12 @@
 package ru.practicum.shareit.booking.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingMapper;
 import ru.practicum.shareit.booking.model.Booking;
@@ -11,9 +16,11 @@ import ru.practicum.shareit.exception.exceptions.BookingStatusAlreadyApprovedExc
 import ru.practicum.shareit.exception.exceptions.EntityNotFoundException;
 import ru.practicum.shareit.exception.exceptions.IllegalAccessToEntityException;
 import ru.practicum.shareit.exception.exceptions.UnknownStateException;
-import ru.practicum.shareit.item.repository.ItemRepositoryJPA;
-import ru.practicum.shareit.user.repository.UserRepositoryJPA;
+import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.user.repository.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,17 +29,19 @@ import java.util.stream.Collectors;
 public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository bookingRepository;
-    private final UserRepositoryJPA userRepository;
-    private final ItemRepositoryJPA itemRepository;
+    private final UserRepository userRepository;
+    private final ItemRepository itemRepository;
 
     @Override
     public BookingDto createBooking(BookingDto bookingDto, Long userId) {
         Booking booking = BookingMapper.toBooking(bookingDto);
-        booking.setItem(itemRepository.findById(bookingDto.getItemId()).orElseThrow(() -> new EntityNotFoundException("Item not found.", userId, String.valueOf(Thread.currentThread().getStackTrace()[1]))));
+        Item item;
+        booking.setItem(item = itemRepository.findById(bookingDto.getItemId()).orElseThrow(() -> new EntityNotFoundException("Item not found.", bookingDto.getItemId(), String.valueOf(Thread.currentThread().getStackTrace()[1]))));
+        assertItemAvailable(item);
         booking.setBooker(userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found.", userId, String.valueOf(Thread.currentThread().getStackTrace()[1]))));
         validateBookerNotOwner(booking, userId);
         booking.setStatus(BookingStatus.WAITING);
-        return toBookingDto(bookingRepository.save(booking));
+        return BookingMapper.toDto(bookingRepository.save(booking));
     }
 
     @Override
@@ -41,52 +50,54 @@ public class BookingServiceImpl implements BookingService {
         validateBookerOwner(booking, ownerId);
         validateNotApprovedBooking(booking);
         booking.setStatus(approved ? BookingStatus.APPROVED : BookingStatus.REJECTED);
-        return toBookingDto(bookingRepository.save(booking));
+        return BookingMapper.toDto(bookingRepository.save(booking));
     }
 
     @Override
     public BookingDto findBookingById(Long bookingId, Long userId) {
         Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -> new EntityNotFoundException("Booking not found.", bookingId, String.valueOf(Thread.currentThread().getStackTrace()[1])));
         validateBookingAccess(booking, userId);
-        return toBookingDto(BookingMapper.initializeBooking(booking));
+        return BookingMapper.toDto(booking);
     }
 
     @Override
-    public List<BookingDto> findAllBookingsByOwnerIdAndState(Long bookerId, String state) {
+    public List<BookingDto> findAllBookingsByOwnerIdAndState(Long bookerId, String state, int from, int size) {
         validateUser(bookerId);
+        Pageable page = PageRequest.of(from / size, size, Sort.by("start").descending());
         switch (state) {
             case "CURRENT":
-                return bookingRepository.findAllCurrentBookingsByOwnerId(bookerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+                return bookingRepository.findAllByBookerIdAndStartBeforeAndEndAfter(bookerId, LocalDateTime.now(), LocalDateTime.now(), page).stream().map(BookingMapper::toDto).collect(Collectors.toList());
             case "PAST":
-                return bookingRepository.findAllPastBookingsByOwnerId(bookerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+                return bookingRepository.findAllByBookerIdAndEndBefore(bookerId, LocalDateTime.now(), page).stream().map(BookingMapper::toDto).collect(Collectors.toList());
             case "FUTURE":
-                return bookingRepository.findAllFutureBookingsByOwnerId(bookerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+                return bookingRepository.findAllByBookerIdAndStartAfter(bookerId, LocalDateTime.now(), page).stream().map(BookingMapper::toDto).collect(Collectors.toList());
             case "WAITING":
-                return bookingRepository.findAllWaitingBookingsByOwnerId(bookerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+                return bookingRepository.findAllByBookerIdAndStatus(bookerId, BookingStatus.WAITING, page).stream().map(BookingMapper::toDto).collect(Collectors.toList());
             case "REJECTED":
-                return bookingRepository.findAllRejectedBookingsByOwnerId(bookerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+                return bookingRepository.findAllByBookerIdAndStatus(bookerId, BookingStatus.REJECTED, page).stream().map(BookingMapper::toDto).collect(Collectors.toList());
             case "ALL":
-                return bookingRepository.findAllBookingsByOwnerIdAndState(bookerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+                return bookingRepository.findAllByBookerId(bookerId, page).stream().map(BookingMapper::toDto).collect(Collectors.toList());
         }
         throw new UnknownStateException(String.format("Unknown state: %s", state), state, String.valueOf(Thread.currentThread().getStackTrace()[1]));
     }
 
     @Override
-    public List<BookingDto> findAllBookingsForOwnerItemsWithState(Long ownerId, String state) {
+    public List<BookingDto> findAllBookingsForOwnerItemsWithState(Long ownerId, String state, int from, int size) {
         validateUser(ownerId);
+        Pageable page = PageRequest.of(from / size, size, Sort.by("start").descending());
         switch (state) {
             case "CURRENT":
-                return bookingRepository.findAllCurrentBookingsForOwnerItems(ownerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+                return bookingRepository.findAllByItemOwnerIdAndStartBeforeAndEndAfter(ownerId, LocalDateTime.now(), LocalDateTime.now(), page).stream().map(BookingMapper::toDto).collect(Collectors.toList());
             case "PAST":
-                return bookingRepository.findAllPastBookingsForOwnerItems(ownerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+                return bookingRepository.findAllByItemOwnerIdAndEndBefore(ownerId, LocalDateTime.now(), page).stream().map(BookingMapper::toDto).collect(Collectors.toList());
             case "FUTURE":
-                return bookingRepository.findAllFutureBookingsForOwnerItems(ownerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+                return bookingRepository.findAllByItemOwnerIdAndStartAfter(ownerId, LocalDateTime.now(), page).stream().map(BookingMapper::toDto).collect(Collectors.toList());
             case "WAITING":
-                return bookingRepository.findAllWaitingBookingsForOwnerItems(ownerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+                return bookingRepository.findAllByItemOwnerIdAndStatus(ownerId, BookingStatus.WAITING, page).stream().map(BookingMapper::toDto).collect(Collectors.toList());
             case "REJECTED":
-                return bookingRepository.findAllRejectedBookingsForOwnerItems(ownerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+                return bookingRepository.findAllByItemOwnerIdAndStatus(ownerId, BookingStatus.REJECTED, page).stream().map(BookingMapper::toDto).collect(Collectors.toList());
             case "ALL":
-                return bookingRepository.findAllBookingsForOwnerItems(ownerId).stream().map(this::toBookingDto).collect(Collectors.toList());
+                return bookingRepository.findAllByItemOwnerId(ownerId, page).stream().map(BookingMapper::toDto).collect(Collectors.toList());
         }
         throw new UnknownStateException(String.format("Unknown state: %s", state), state, String.valueOf(Thread.currentThread().getStackTrace()[1]));
     }
@@ -121,10 +132,9 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
-    private BookingDto toBookingDto(Booking booking) {
-        BookingDto dto = BookingMapper.toDto(booking);
-        dto.setBooker(new BookingDto.Booker(booking.getBooker().getId(), booking.getBooker().getName()));
-        dto.setItem(new BookingDto.Item(booking.getItem().getId(), booking.getItem().getName()));
-        return dto;
+    private void assertItemAvailable(Item item) {
+        if (!item.getAvailable()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        }
     }
 }

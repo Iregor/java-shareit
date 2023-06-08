@@ -15,9 +15,7 @@ public interface UserService {
 
     List<UserDto> findAllUsers();
 
-    UserDto updateUser(User user);
-
-    UserDto patchUser(User user) throws IllegalAccessException;
+    UserDto patchUser(User user, Long userId) throws IllegalAccessException;
 
     void deleteUserById(Long userId);
 }
