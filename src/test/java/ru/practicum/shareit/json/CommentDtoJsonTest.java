@@ -18,7 +18,7 @@ public class CommentDtoJsonTest {
     private JacksonTester<CommentDto> jsonSerializer;
 
     @Test
-    public void CommentDtoJsonSerializationTest() throws Exception {
+    public void commentDtoJsonSerializationTest() throws Exception {
         CommentDto commentDto = CommentDto.builder()
                 .id(1L)
                 .text("comment")
@@ -35,7 +35,7 @@ public class CommentDtoJsonTest {
     }
 
     @Test
-    public void CommentDtoDeserializationTest() throws Exception {
+    public void commentDtoDeserializationTest() throws Exception {
         CommentDto commentDto = CommentDto.builder()
                 .id(1L)
                 .text("comment")

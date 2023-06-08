@@ -16,7 +16,7 @@ public class ItemDtoJsonTest {
     private JacksonTester<ItemDto> jsonSerializer;
 
     @Test
-    public void ItemDtoJsonSerializationTest() throws Exception {
+    public void itemDtoJsonSerializationTest() throws Exception {
         ItemDto itemDto = ItemDto.builder()
                 .id(1L)
                 .name("item1")
@@ -37,7 +37,7 @@ public class ItemDtoJsonTest {
     }
 
     @Test
-    public void ItemDtoDeserializationTest() throws Exception {
+    public void itemDtoDeserializationTest() throws Exception {
         ItemDto itemDto = ItemDto.builder()
                 .id(1L)
                 .name("item1")

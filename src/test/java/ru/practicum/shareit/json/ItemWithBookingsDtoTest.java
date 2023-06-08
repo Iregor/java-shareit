@@ -22,7 +22,7 @@ public class ItemWithBookingsDtoTest {
     private JacksonTester<ItemWithBookingsDto> jsonSerializer;
 
     @Test
-    public void ItemWithBookingsDtoSerializationTest() throws Exception {
+    public void itemWithBookingsDtoSerializationTest() throws Exception {
         ItemWithBookingsDto dto = new ItemWithBookingsDto(1L, "item1", "item1_desc", true, 2L, 3L);
         dto.setLastBooking(new BookingBookerIdDto(4L, 4L));
         dto.setNextBooking(new BookingBookerIdDto(5L, 5L));

@@ -16,7 +16,7 @@ public class UserDtoJsonTest {
     private JacksonTester<UserDto> jsonSerializer;
 
     @Test
-    public void testUserDtoSerialization() throws Exception {
+    public void userDtoSerializationTest() throws Exception {
         UserDto userDto = new UserDto(1L, "user1", "user@email.ru");
 
         JsonContent<UserDto> jsonContent = jsonSerializer.write(userDto);
@@ -27,7 +27,7 @@ public class UserDtoJsonTest {
     }
 
     @Test
-    public void testUserDtoDeserialization() throws Exception {
+    public void userDtoDeserializationTest() throws Exception {
         UserDto userDto = new UserDto(1L, "user1", "user@email.ru");
 
         JsonContent<UserDto> jsonDto = jsonSerializer.write(userDto);
