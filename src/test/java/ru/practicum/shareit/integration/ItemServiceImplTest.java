@@ -1,6 +1,7 @@
 package ru.practicum.shareit.integration;
 
 import lombok.RequiredArgsConstructor;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -30,14 +31,42 @@ public class ItemServiceImplTest {
     private final ItemServiceImpl itemService;
     private final UserServiceImpl userService;
     private final BookingServiceImpl bookingService;
+    User user, owner, booker;
+    ItemDto itemDto, item1Dto, item2Dto, item3Dto;
+    BookingDto lastBookingDto, nextBookingDto;
+    long userId, bookerId, ownerId;
+
+    @BeforeEach
+    public void createEntities() {
+        user = new User(null, "user1", "email@email.ru");
+        owner = new User(null, "owner", "owner@email.ru");
+        booker = new User(null, "booker", "booker@email.ru");
+        user = UserMapper.toUser(userService.createUser(user));
+        owner = UserMapper.toUser(userService.createUser(owner));
+        booker = UserMapper.toUser(userService.createUser(booker));
+        userId = user.getId();
+        ownerId = owner.getId();
+        bookerId = booker.getId();
+
+        lastBookingDto = BookingDto.builder()
+                .itemId(null)
+                .start(LocalDateTime.now().minusSeconds(20))
+                .end(LocalDateTime.now().minusSeconds(10))
+                .build();
+        nextBookingDto = BookingDto.builder()
+                .itemId(null)
+                .start(LocalDateTime.now().plusSeconds(10))
+                .end(LocalDateTime.now().plusSeconds(20))
+                .build();
+
+        itemDto = ItemDto.builder().name("item1_name").description("item1_desc").available(true).build();
+        item1Dto = ItemDto.builder().name("item1_name").description("item1_desc").available(true).build();
+        item2Dto = ItemDto.builder().name("item2_name").description("item2_desc").available(true).build();
+        item3Dto = ItemDto.builder().name("item3_name").description("item3_desc").available(true).build();
+    }
 
     @Test
     public void createItem_succeed() {
-        User user = new User(null, "user1", "email@email.ru");
-        user = UserMapper.toUser(userService.createUser(user));
-        ItemDto itemDto = ItemDto.builder().name("item1_name").description("item1_desc").available(true).build();
-
-
         assertThat(itemDto = itemService.createItem(itemDto, user.getId()))
                 .hasFieldOrPropertyWithValue("id", itemDto.getId())
                 .hasFieldOrPropertyWithValue("name", "item1_name")
@@ -46,31 +75,24 @@ public class ItemServiceImplTest {
 
     @Test
     public void createItem_UserNotFound_exceptionThrown() {
-        ItemDto itemDto = ItemDto.builder().name("item1_name").description("item1_desc").available(true).build();
-
         assertThatThrownBy(() -> itemService.createItem(itemDto, 100L)).isInstanceOf(EntityNotFoundException.class);
     }
 
     @Test
     public void createItem_RequestNotFound_exceptionThrown() {
-        User user = new User(null, "user1", "email@email.ru");
-        long userId = UserMapper.toUser(userService.createUser(user)).getId();
-        ItemDto itemDto = ItemDto.builder().name("item1_name").description("item1_desc").available(true).requestId(100L).build();
+        long notExistingRequestId = 100L;
+        itemDto.setRequestId(notExistingRequestId);
 
-
-        assertThatThrownBy(() -> itemService.createItem(itemDto, userId)).isInstanceOf(EntityNotFoundException.class);
+        assertThatThrownBy(() -> itemService.createItem(itemDto, user.getId())).isInstanceOf(EntityNotFoundException.class);
     }
 
     @Test
     public void updateItem_succeed() throws IllegalAccessException {
-        User user = new User(null, "user1", "email@email.ru");
-        user = UserMapper.toUser(userService.createUser(user));
-        ItemDto itemDto = ItemDto.builder().name("item1_name").description("item1_desc").available(true).build();
         assertThat(itemDto = itemService.createItem(itemDto, user.getId()))
                 .hasFieldOrPropertyWithValue("name", "item1_name")
                 .hasFieldOrPropertyWithValue("description", "item1_desc");
-
         long itemId = itemDto.getId();
+
         itemDto = ItemDto.builder().name("updated_name").description("updated_description").available(false).build();
         assertThat(itemService.updateItem(itemDto, user.getId(), itemId))
                 .hasFieldOrPropertyWithValue("name", "updated_name")
@@ -80,24 +102,10 @@ public class ItemServiceImplTest {
 
     @Test
     public void findItemById_succeed() {
-        User owner = new User(null, "owner", "owner@email.ru");
-        long ownerId = userService.createUser(owner).getId();
-        User booker = new User(null, "booker", "booker@email.ru");
-        long bookerId = userService.createUser(booker).getId();
-
-        ItemDto itemDto = ItemDto.builder().name("item1_name").description("item1_desc").available(true).build();
         long itemId = itemService.createItem(itemDto, ownerId).getId();
 
-        BookingDto lastBookingDto = BookingDto.builder()
-                .itemId(itemId)
-                .start(LocalDateTime.now().minusSeconds(20))
-                .end(LocalDateTime.now().minusSeconds(10))
-                .build();
-        BookingDto nextBookingDto = BookingDto.builder()
-                .itemId(itemId)
-                .start(LocalDateTime.now().plusSeconds(10))
-                .end(LocalDateTime.now().plusSeconds(20))
-                .build();
+        lastBookingDto.setItemId(itemId);
+        nextBookingDto.setItemId(itemId);
 
         long lastBookingId = bookingService.createBooking(lastBookingDto, bookerId).getId();
         long nextBookingId = bookingService.createBooking(nextBookingDto, bookerId).getId();
@@ -119,17 +127,9 @@ public class ItemServiceImplTest {
 
     @Test
     public void findOwnerItems_succeed() {
-        User owner = new User(null, "owner", "owner@email.ru");
-        long ownerId = userService.createUser(owner).getId();
-        User other = new User(null, "other", "other@email.ru");
-        long otherId = userService.createUser(other).getId();
-
-        ItemDto item1Dto = ItemDto.builder().name("item1_name").description("item1_desc").available(true).build();
         long item1Id = itemService.createItem(item1Dto, ownerId).getId();
-        ItemDto item2Dto = ItemDto.builder().name("item2_name").description("item2_desc").available(true).build();
         long item2Id = itemService.createItem(item2Dto, ownerId).getId();
-        ItemDto item3Dto = ItemDto.builder().name("item3_name").description("item3_desc").available(true).build();
-        long item3Id = itemService.createItem(item3Dto, otherId).getId();
+        long item3Id = itemService.createItem(item3Dto, userId).getId();
 
         assertThat(itemService.findOwnerItems(ownerId))
                 .hasSize(2)
@@ -142,13 +142,11 @@ public class ItemServiceImplTest {
 
     @Test
     public void searchAvailableItems_succeed() throws IllegalAccessException {
-        User owner = new User(null, "owner", "owner@email.ru");
         long ownerId = userService.createUser(owner).getId();
-        ItemDto item1Dto = ItemDto.builder().name("item1_name").description("item1_desc").available(true).build();
         long item1Id = itemService.createItem(item1Dto, ownerId).getId();
-        ItemDto item2Dto = ItemDto.builder().name("item2_name").description("item2_desc").available(true).build();
         long item2Id = itemService.createItem(item2Dto, ownerId).getId();
-        ItemDto item3Dto = ItemDto.builder().name("name").description("desc").available(true).build();
+        item3Dto.setName("name");
+        item3Dto.setDescription("desc");
         long item3Id = itemService.createItem(item3Dto, ownerId).getId();
 
 
@@ -166,19 +164,9 @@ public class ItemServiceImplTest {
 
     @Test
     public void createComment_succeed() {
-        User owner = new User(null, "owner", "owner@email.ru");
-        long ownerId = userService.createUser(owner).getId();
-        User booker = new User(null, "booker", "booker@email.ru");
-        long bookerId = userService.createUser(booker).getId();
-
-        ItemDto itemDto = ItemDto.builder().name("item1_name").description("item1_desc").available(true).build();
         long itemId = itemService.createItem(itemDto, ownerId).getId();
 
-        BookingDto lastBookingDto = BookingDto.builder()
-                .itemId(itemId)
-                .start(LocalDateTime.now().minusSeconds(20))
-                .end(LocalDateTime.now().minusSeconds(10))
-                .build();
+        lastBookingDto.setItemId(itemId);
 
         long lastBookingId = bookingService.createBooking(lastBookingDto, bookerId).getId();
         bookingService.updateBooking(lastBookingId, true, ownerId);

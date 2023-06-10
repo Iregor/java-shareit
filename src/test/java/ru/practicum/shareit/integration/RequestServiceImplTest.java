@@ -1,6 +1,7 @@
 package ru.practicum.shareit.integration;
 
 import lombok.RequiredArgsConstructor;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,16 +25,37 @@ public class RequestServiceImplTest {
     private final ItemServiceImpl itemService;
     private final UserServiceImpl userService;
     private final RequestServiceImpl requestService;
+    long requestorId, anotherUserId, ownerId;
+    long item1Id, item2Id;
+    private User requestor, anotherUser, owner;
+    private RequestDesc dto, dto1, dto2, dto3;
+    private RequestWithItems ansDto;
+    private ItemDto item1Dto, item2Dto;
+
+    @BeforeEach
+    public void createEntities() {
+        requestor = new User(null, "requestor", "requestor@email.ru");
+        anotherUser = new User(null, "another_requestor", "another_requestor@email.ru");
+        requestorId = userService.createUser(requestor).getId();
+        anotherUserId = userService.createUser(anotherUser).getId();
+        owner = new User(null, "owner", "owner@email.ru");
+        ownerId = userService.createUser(owner).getId();
+
+        dto1 = new RequestDesc("request_desc1");
+        dto2 = new RequestDesc("request_desc2");
+        dto3 = new RequestDesc("request_desc3");
+
+        requestorId = userService.createUser(requestor).getId();
+        dto = new RequestDesc("request_desc");
+
+        item1Dto = ItemDto.builder().name("item1_name").description("item1_desc").available(true).requestId(null).build();
+        item2Dto = ItemDto.builder().name("item2_name").description("item2_desc").available(true).requestId(null).build();
+
+    }
 
     @Test
     @Transactional
     public void createRequest_succeed() {
-        User requestor = new User(null, "requestor", "requestor@email.ru");
-        long requestorId = userService.createUser(requestor).getId();
-
-        RequestDesc dto = new RequestDesc("request_desc");
-
-        RequestWithItems ansDto;
         assertThat(ansDto = requestService.createRequest(dto, requestorId))
                 .hasFieldOrPropertyWithValue("id", ansDto.getId())
                 .hasFieldOrPropertyWithValue("description", dto.getDescription())
@@ -44,15 +66,6 @@ public class RequestServiceImplTest {
     @Test
     @Transactional
     public void findAllOwnersRequests_succeed() {
-        User requestor = new User(null, "requestor", "requestor@email.ru");
-        long requestorId = userService.createUser(requestor).getId();
-        User anotherUser = new User(null, "another_requestor", "another_requestor@email.ru");
-        long anotherUserId = userService.createUser(anotherUser).getId();
-
-        RequestDesc dto1 = new RequestDesc("request_desc1");
-        RequestDesc dto2 = new RequestDesc("request_desc2");
-        RequestDesc dto3 = new RequestDesc("request_desc3");
-
         requestService.createRequest(dto1, requestorId);
         requestService.createRequest(dto2, requestorId);
         requestService.createRequest(dto3, anotherUserId);
@@ -63,15 +76,6 @@ public class RequestServiceImplTest {
     @Test
     @Transactional
     public void findAllRequests_succeed() {
-        User requestor = new User(null, "requestor", "requestor@email.ru");
-        long requestorId = userService.createUser(requestor).getId();
-        User anotherUser = new User(null, "another_requestor", "another_requestor@email.ru");
-        long anotherUserId = userService.createUser(anotherUser).getId();
-
-        RequestDesc dto1 = new RequestDesc("request_desc1");
-        RequestDesc dto2 = new RequestDesc("request_desc2");
-        RequestDesc dto3 = new RequestDesc("request_desc3");
-
         requestService.createRequest(dto1, requestorId);
         requestService.createRequest(dto2, requestorId);
         requestService.createRequest(dto3, anotherUserId);
@@ -82,20 +86,13 @@ public class RequestServiceImplTest {
     @Test
     @Transactional
     public void findRequestById_succeed() {
-        User requestor = new User(null, "requestor", "requestor@email.ru");
-        long requestorId = userService.createUser(requestor).getId();
-        User owner = new User(null, "owner", "owner@email.ru");
-        long ownerId = userService.createUser(owner).getId();
-
-
-        RequestDesc dto1 = new RequestDesc("request_desc1");
         RequestWithItems ansDto = requestService.createRequest(dto1, requestorId);
         long requestId = ansDto.getId();
 
-        ItemDto itemDto1 = ItemDto.builder().name("item1_name").description("item1_desc").available(true).requestId(requestId).build();
-        ItemDto itemDto2 = ItemDto.builder().name("item2_name").description("item2_desc").available(true).requestId(requestId).build();
-        long item1Id = itemService.createItem(itemDto1, ownerId).getId();
-        long item2Id = itemService.createItem(itemDto2, ownerId).getId();
+        item1Dto.setRequestId(requestId);
+        item2Dto.setRequestId(requestId);
+        item1Id = itemService.createItem(item1Dto, ownerId).getId();
+        item2Id = itemService.createItem(item2Dto, ownerId).getId();
 
         assertThat(ansDto = requestService.findRequestById(requestorId, requestId))
                 .hasFieldOrPropertyWithValue("id", requestId)
