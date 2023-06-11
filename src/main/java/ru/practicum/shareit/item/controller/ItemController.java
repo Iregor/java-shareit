@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.service.ItemService;
-import ru.practicum.shareit.validation.Exist;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -22,22 +21,22 @@ public class ItemController {
     private final ItemService itemService;
 
     @PostMapping
-    public ItemDto createItem(@RequestBody @Valid ItemDto itemDto, @RequestHeader("X-Sharer-User-Id") @Exist("user") Long userId) {
+    public ItemDto createItem(@RequestBody @Valid ItemDto itemDto, @RequestHeader("X-Sharer-User-Id") Long userId) {
         return itemService.createItem(itemDto, userId);
     }
 
     @PatchMapping("/{itemId}")
-    public ItemDto updateItem(@RequestBody ItemDto itemDto, @RequestHeader("X-Sharer-User-Id") @Exist("user") Long userId, @PathVariable @Exist("item") Long itemId) throws IllegalAccessException {
+    public ItemDto updateItem(@RequestBody ItemDto itemDto, @RequestHeader("X-Sharer-User-Id") Long userId, @PathVariable Long itemId) throws IllegalAccessException {
         return itemService.updateItem(itemDto, userId, itemId);
     }
 
     @GetMapping("/{itemId}")
-    public ItemDto findItemById(@PathVariable @Exist("item") Long itemId, @RequestHeader("X-Sharer-User-Id") Long userId) {
+    public ItemDto findItemById(@PathVariable Long itemId, @RequestHeader("X-Sharer-User-Id") Long userId) {
         return itemService.findItemById(itemId, userId);
     }
 
     @GetMapping
-    public List<ItemDto> findOwnerItems(@RequestHeader("X-Sharer-User-Id") @Exist("user") Long userId) {
+    public List<ItemDto> findOwnerItems(@RequestHeader("X-Sharer-User-Id") Long userId) {
         return itemService.findOwnerItems(userId);
     }
 

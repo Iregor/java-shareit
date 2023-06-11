@@ -10,11 +10,6 @@ public class BookingStatusAlreadyApprovedException extends RuntimeException {
     private String backInfo;
     private LocalDateTime time;
 
-    public BookingStatusAlreadyApprovedException(Long bookingId, String backInfo) {
-        this.bookingId = bookingId;
-        this.backInfo = backInfo;
-    }
-
     public BookingStatusAlreadyApprovedException(String message, Long bookingId, String backInfo) {
         super(message);
         this.bookingId = bookingId;

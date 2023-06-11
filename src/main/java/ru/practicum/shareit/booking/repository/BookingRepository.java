@@ -1,7 +1,7 @@
 package ru.practicum.shareit.booking.repository;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingStatus;
@@ -18,39 +18,23 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     Optional<Booking> findFirstByItemIdAndBookerIdAndStatusAndEndBefore(Long itemId, Long bookerId, BookingStatus status, LocalDateTime time);
 
-    @Query("SELECT b FROM Booking b JOIN FETCH b.booker JOIN FETCH b.item it JOIN FETCH it.owner WHERE b.booker.id = :bookerId ORDER BY b.start DESC")
-    List<Booking> findAllBookingsByOwnerIdAndState(Long bookerId);
+    List<Booking> findAllByBookerId(Long bookerId, Pageable page);
 
-    @Query("SELECT b FROM Booking b JOIN FETCH b.booker JOIN FETCH b.item it JOIN FETCH it.owner WHERE b.booker.id = :bookerId AND current_timestamp BETWEEN b.start AND b.end ORDER BY b.start DESC")
-    List<Booking> findAllCurrentBookingsByOwnerId(Long bookerId);
+    List<Booking> findAllByBookerIdAndStartBeforeAndEndAfter(Long bookerId, LocalDateTime now1, LocalDateTime now2, Pageable page);
 
-    @Query("SELECT b FROM Booking b JOIN FETCH b.booker JOIN FETCH b.item it JOIN FETCH it.owner WHERE b.booker.id = :bookerId AND current_timestamp > b.end ORDER BY b.start DESC")
-    List<Booking> findAllPastBookingsByOwnerId(Long bookerId);
+    List<Booking> findAllByBookerIdAndEndBefore(Long bookerId, LocalDateTime now, Pageable page);
 
-    @Query("SELECT b FROM Booking b JOIN FETCH b.booker JOIN FETCH b.item it JOIN FETCH it.owner WHERE b.booker.id = :bookerId AND current_timestamp < b.start ORDER BY b.start DESC")
-    List<Booking> findAllFutureBookingsByOwnerId(Long bookerId);
+    List<Booking> findAllByBookerIdAndStartAfter(Long bookerId, LocalDateTime now, Pageable page);
 
-    @Query("SELECT b FROM Booking b JOIN FETCH b.booker JOIN FETCH b.item it JOIN FETCH it.owner WHERE b.booker.id = :bookerId AND b.status = 'WAITING' ORDER BY b.start DESC")
-    List<Booking> findAllWaitingBookingsByOwnerId(Long bookerId);
+    List<Booking> findAllByBookerIdAndStatus(Long bookerId, BookingStatus status, Pageable page);
 
-    @Query("SELECT b FROM Booking b JOIN FETCH b.booker JOIN FETCH b.item it JOIN FETCH it.owner WHERE b.booker.id = :bookerId AND b.status = 'REJECTED' ORDER BY b.start DESC")
-    List<Booking> findAllRejectedBookingsByOwnerId(Long bookerId);
+    List<Booking> findAllByItemOwnerId(Long ownerId, Pageable page);
 
-    @Query("SELECT b FROM Booking b JOIN FETCH b.booker JOIN FETCH b.item it JOIN FETCH it.owner own WHERE own.id = :ownerId ORDER BY b.start DESC")
-    List<Booking> findAllBookingsForOwnerItems(Long ownerId);
+    List<Booking> findAllByItemOwnerIdAndStartBeforeAndEndAfter(Long ownerId, LocalDateTime now1, LocalDateTime now2, Pageable page);
 
-    @Query("SELECT b FROM Booking b JOIN FETCH b.booker JOIN FETCH b.item it JOIN FETCH it.owner own WHERE own.id = :ownerId AND current_timestamp BETWEEN b.start AND b.end ORDER BY b.start DESC")
-    List<Booking> findAllCurrentBookingsForOwnerItems(Long ownerId);
+    List<Booking> findAllByItemOwnerIdAndEndBefore(Long ownerId, LocalDateTime now, Pageable page);
 
-    @Query("SELECT b FROM Booking b JOIN FETCH b.booker JOIN FETCH b.item it JOIN FETCH it.owner own WHERE own.id = :ownerId AND current_timestamp > b.end ORDER BY b.start DESC")
-    List<Booking> findAllPastBookingsForOwnerItems(Long ownerId);
+    List<Booking> findAllByItemOwnerIdAndStartAfter(Long ownerId, LocalDateTime now, Pageable page);
 
-    @Query("SELECT b FROM Booking b JOIN FETCH b.booker JOIN FETCH b.item it JOIN FETCH it.owner own WHERE own.id = :ownerId AND current_timestamp < b.start ORDER BY b.start DESC")
-    List<Booking> findAllFutureBookingsForOwnerItems(Long ownerId);
-
-    @Query("SELECT b FROM Booking b JOIN FETCH b.booker JOIN FETCH b.item it JOIN FETCH it.owner own WHERE own.id = :ownerId AND b.status = 'WAITING' ORDER BY b.start DESC")
-    List<Booking> findAllWaitingBookingsForOwnerItems(Long ownerId);
-
-    @Query("SELECT b FROM Booking b JOIN FETCH b.booker JOIN FETCH b.item it JOIN FETCH it.owner own WHERE own.id = :ownerId AND b.status = 'REJECTED' ORDER BY b.start DESC")
-    List<Booking> findAllRejectedBookingsForOwnerItems(Long ownerId);
+    List<Booking> findAllByItemOwnerIdAndStatus(Long ownerId, BookingStatus status, Pageable page);
 }

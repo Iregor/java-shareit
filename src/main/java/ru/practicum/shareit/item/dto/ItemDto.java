@@ -29,7 +29,7 @@ public class ItemDto {
     @NotNull
     private Boolean available;
 
-//    Long ownerId;
+    private Long ownerId;
 
-//    private Long itemRequestId;
+    private Long requestId;
 }

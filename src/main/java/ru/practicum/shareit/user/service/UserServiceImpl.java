@@ -9,8 +9,7 @@ import ru.practicum.shareit.exception.exceptions.EntityNotFoundException;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserMapper;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.repository.UserRepositoryJPA;
-import ru.practicum.shareit.validation.UniqueUser;
+import ru.practicum.shareit.user.repository.UserRepository;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
@@ -26,7 +25,7 @@ import java.util.stream.Collectors;
 @Validated
 public class UserServiceImpl implements UserService {
 
-    private final UserRepositoryJPA repository;
+    private final UserRepository repository;
     private final Validator validator;
 
     @Override
@@ -45,15 +44,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDto updateUser(User user) {
-        return UserMapper.toDto(repository.save(user));
-    }
-
-    @Override
-    public UserDto patchUser(User user) throws IllegalAccessException {
-        buildUserEntity(user);
+    public UserDto patchUser(User user, Long userId) throws IllegalAccessException {
+        buildUserEntity(user, userId);
         validateUser(user);
-        return updateUser(user);
+        return UserMapper.toDto(repository.save(user));
     }
 
     @Override
@@ -61,8 +55,8 @@ public class UserServiceImpl implements UserService {
         repository.deleteById(userId);
     }
 
-    private void buildUserEntity(User user) throws IllegalAccessException {
-        User repoUser = repository.findById(user.getId()).orElseThrow(() -> new EntityNotFoundException("User not found.", user.getId(), String.valueOf(Thread.currentThread().getStackTrace()[1])));
+    private void buildUserEntity(User user, Long userId) throws IllegalAccessException {
+        User repoUser = repository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User not found.", user.getId(), String.valueOf(Thread.currentThread().getStackTrace()[1])));
 
         Class<? extends User> cls = user.getClass();
         for (Field field : cls.getDeclaredFields()) {
@@ -73,7 +67,7 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private void validateUser(@UniqueUser User user) {
+    private void validateUser(User user) {
         Set<ConstraintViolation<User>> violations = validator.validate(user);
         if (!violations.isEmpty()) {
             throw new ConstraintViolationException(violations);

@@ -8,7 +8,7 @@ import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @Data
-public class ItemBookingsIdDto extends ItemDto {
+public class ItemWithBookingsDto extends ItemDto {
 
     private BookingBookerIdDto lastBooking;
 
@@ -16,7 +16,7 @@ public class ItemBookingsIdDto extends ItemDto {
 
     private List<CommentDto> comments;
 
-    public ItemBookingsIdDto(Long id, @NotBlank String name, @NotBlank String description, @NotNull Boolean available) {
-        super(id, name, description, available);
+    public ItemWithBookingsDto(Long id, @NotBlank String name, @NotBlank String description, @NotNull Boolean available, Long ownerId, Long requestId) {
+        super(id, name, description, available, ownerId, requestId);
     }
 }
