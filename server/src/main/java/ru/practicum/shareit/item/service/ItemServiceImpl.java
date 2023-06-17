@@ -21,7 +21,6 @@ import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -82,9 +81,6 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public List<ItemDto> searchAvailableItems(String text) {
-        if (text.isBlank() || text.isEmpty()) {
-            return new ArrayList<>();
-        }
         return itemRepository.findAllByDescriptionContainingIgnoreCaseAndAvailable(text, true).stream().map(ItemMapper::toItemDto).collect(Collectors.toList());
     }
 

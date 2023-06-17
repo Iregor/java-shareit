@@ -46,8 +46,7 @@ public class BookingController {
             @RequestParam(defaultValue = "ALL") String state,
             @RequestParam(defaultValue = "0") @PositiveOrZero int from,
             @RequestParam(defaultValue = "10") @Positive int size) {
-        BookingState.from(state)
-                .orElseThrow(() -> new IllegalArgumentException("Unknown state: " + state));
+        assertValidState(state);
         return bookingClient.findAllBookingsByOwnerIdAndState(ownerId, state, from, size);
     }
 
@@ -57,10 +56,12 @@ public class BookingController {
             @RequestParam(defaultValue = "ALL") String state,
             @RequestParam(defaultValue = "0") @PositiveOrZero int from,
             @RequestParam(defaultValue = "10") @Positive int size) {
-        BookingState.from(state)
-                .orElseThrow(() -> new IllegalArgumentException("Unknown state: " + state));
+        assertValidState(state);
         return bookingClient.findAllBookingsForOwnerItemsWithState(ownerId, state, from, size);
     }
 
-
+    private void assertValidState(String state) {
+        BookingState.from(state)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown state: " + state));
+    }
 }

@@ -21,6 +21,11 @@ public class ExceptionHandler {
 
     }
 
+/*    @org.springframework.web.bind.annotation.ExceptionHandler(Throwable.class)
+    ResponseEntity<Response> handleThrowableException(Throwable exc) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(exc.getMessage() != null ? exc.getMessage() : null));
+    }*/
+
     @NoArgsConstructor
     @AllArgsConstructor
     @Getter
